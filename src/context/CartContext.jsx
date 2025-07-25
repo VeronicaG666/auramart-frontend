@@ -51,10 +51,16 @@ const CartProvider = ({ children }) => {
       const res = await cartService.addToCart(productId, quantity);
       setCartData(res.data);
     } else {
-      localCart.addItem({ id: productId }, quantity);
-      setCartData({ items: localCart.getItems() });
+      try {
+        const { data: product } = await axios.get(`${API.defaults.baseURL}/products/id/${productId}`);
+        localCart.addItem(product, quantity);
+        setCartData({ items: localCart.getItems() });
+      } catch (error) {
+        console.error("Error fetching product for guest cart:", error);
+      }
     }
   };
+
 
   const deleteItem = async (product_id) => {
     if (isLoggedIn) {
@@ -74,7 +80,7 @@ const CartProvider = ({ children }) => {
           ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
           : item
       );
-      setCartData({ ...cartData, items: updatedItems }); 
+      setCartData({ ...cartData, items: updatedItems });
       return res;
     } else {
       localCart.incrementQuantity(product_id);

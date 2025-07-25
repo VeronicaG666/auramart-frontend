@@ -41,7 +41,9 @@ class LocalCart {
       existing.subtotal = parseFloat(existing.price) * existing.quantity;
     } else {
       const newItem = {
-        ...product,
+        id: product.id,
+        name: product.name,
+        price: product.price,
         quantity,
         subtotal: parseFloat(product.price) * quantity,
       };
@@ -50,6 +52,7 @@ class LocalCart {
 
     this.saveItems(items);
   };
+
 
   clearCart = () => localStorage.removeItem("__cart");
 }
