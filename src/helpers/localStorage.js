@@ -1,47 +1,32 @@
 class LocalCart {
-  isExist = (id) => !!this.getItem(id);
+  key = "__cart";
 
-  getItems = () => JSON.parse(localStorage.getItem("__cart")) || [];
+  /** ✅ Get all items from cart */
+  getItems = () => JSON.parse(localStorage.getItem(this.key)) || [];
 
-  getItem = (id) => this.getItems().find((product) => product.id === id);
+  /** ✅ Save cart data to localStorage */
+  saveItems = (data) => localStorage.setItem(this.key, JSON.stringify(data));
 
-  saveItems = (data) => localStorage.setItem("__cart", JSON.stringify(data));
+  /** ✅ Check if product exists */
+  isExist = (id) => !!this.getItems().find((p) => p.product_id === id);
 
-  removeItem = (id) =>
-    this.saveItems(this.getItems().filter((product) => product.id !== id));
+  /** ✅ Get single item */
+  getItem = (id) => this.getItems().find((p) => p.product_id === id);
 
-  incrementQuantity = (id) =>
-    this.saveItems(
-      this.getItems().map((prod) => {
-        if (id === prod.id) {
-          prod.quantity += 1;
-          prod.subtotal = parseFloat(prod.price) * prod.quantity;
-        }
-        return prod;
-      })
-    );
-
-  decrementQuantity = (id) =>
-    this.saveItems(
-      this.getItems().map((prod) => {
-        if (id === prod.id) {
-          prod.quantity = Math.max(1, prod.quantity - 1);
-          prod.subtotal = parseFloat(prod.price) * prod.quantity;
-        }
-        return prod;
-      })
-    );
-
+  /** ✅ Add product with full details */
   addItem = (product, quantity = 1) => {
     const items = this.getItems();
-    const existing = items.find((p) => p.id === product.id);
+    const existing = items.find((p) => p.product_id === product.product_id);
 
     if (existing) {
       existing.quantity += quantity;
       existing.subtotal = parseFloat(existing.price) * existing.quantity;
     } else {
       const newItem = {
-        ...product,
+        product_id: product.product_id,
+        name: product.name,
+        price: parseFloat(product.price),
+        image_url: product.image_url || null,
         quantity,
         subtotal: parseFloat(product.price) * quantity,
       };
@@ -51,7 +36,37 @@ class LocalCart {
     this.saveItems(items);
   };
 
-  clearCart = () => localStorage.removeItem("__cart");
+  /** ✅ Remove product */
+  removeItem = (id) => {
+    this.saveItems(this.getItems().filter((p) => p.product_id !== id));
+  };
+
+  /** ✅ Increment quantity */
+  incrementQuantity = (id) => {
+    const items = this.getItems().map((p) => {
+      if (p.product_id === id) {
+        p.quantity += 1;
+        p.subtotal = parseFloat(p.price) * p.quantity;
+      }
+      return p;
+    });
+    this.saveItems(items);
+  };
+
+  /** ✅ Decrement quantity */
+  decrementQuantity = (id) => {
+    const items = this.getItems().map((p) => {
+      if (p.product_id === id) {
+        p.quantity = Math.max(1, p.quantity - 1);
+        p.subtotal = parseFloat(p.price) * p.quantity;
+      }
+      return p;
+    });
+    this.saveItems(items);
+  };
+
+  /** ✅ Clear cart */
+  clearCart = () => localStorage.removeItem(this.key);
 }
 
 export default new LocalCart();
