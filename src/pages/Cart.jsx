@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@windmill/react-ui";
+import CartItem from "components/CartItem";
 import { useCart } from "context/CartContext";
 import { formatCurrency } from "helpers/formatCurrency";
 import Layout from "layout/Layout";
@@ -18,7 +19,7 @@ const Cart = () => {
   const { cartData, isLoading, cartSubtotal } = useCart();
   const isCartEmpty = !cartData?.items?.length;
 
-  /** ✅ Empty Cart State */
+  /** Empty Cart State */
   if (isCartEmpty) {
     return (
       <Layout title="Cart" loading={isLoading}>
@@ -42,11 +43,11 @@ const Cart = () => {
     );
   }
 
-  /** ✅ Cart Table */
+  /** Cart Table */
   return (
     <Layout title="Cart" loading={isLoading || cartData === undefined}>
       <div className="max-w-6xl mx-auto px-4">
-        {/* ✅ Title */}
+        {/* Title */}
         <h1 className="my-12 text-center text-4xl font-heading font-extrabold text-[#7A0BC0]">
           Your Shopping Cart
         </h1>
@@ -68,60 +69,13 @@ const Cart = () => {
                   key={item.product_id}
                   className="hover:bg-gray-50 transition"
                 >
-                  {/* ✅ Show Product Image + Name */}
-                  <TableCell className="flex items-center gap-3">
-                    <img
-                      src={item.image_url || "https://placehold.co/60x60?text=No+Image"}
-                      alt={item.name || "Product"}
-                      className="w-16 h-16 object-cover rounded-md border"
-                    />
-                    <span className="font-medium text-gray-800">{item.name}</span>
-                  </TableCell>
-
-                  {/* ✅ Price */}
-                  <TableCell className="text-gray-700 font-semibold">
-                    {formatCurrency(item.price)}
-                  </TableCell>
-
-                  {/* ✅ Quantity */}
-                  <TableCell>
-                    <div className="flex items-center">
-                      <button
-                        className="px-2 py-1 bg-gray-200 rounded-l"
-                        onClick={() => item.decrement(item.product_id)}
-                      >
-                        -
-                      </button>
-                      <span className="px-3">{item.quantity}</span>
-                      <button
-                        className="px-2 py-1 bg-gray-200 rounded-r"
-                        onClick={() => item.increment(item.product_id)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </TableCell>
-
-                  {/* ✅ Total */}
-                  <TableCell className="font-semibold text-gray-800">
-                    {formatCurrency(item.subtotal)}
-                  </TableCell>
-
-                  {/* ✅ Remove */}
-                  <TableCell>
-                    <button
-                      onClick={() => item.remove(item.product_id)}
-                      className="text-red-500 hover:text-red-700 font-bold"
-                    >
-                      ×
-                    </button>
-                  </TableCell>
+                  <CartItem item={item} />
                 </TableRow>
               ))}
             </TableBody>
           </Table>
 
-          {/* ✅ Footer */}
+          {/* Footer */}
           <TableFooter className="flex flex-col sm:flex-row justify-between items-center p-6 bg-[#FFF0F5] border-t border-[#FFD6E0] space-y-4 sm:space-y-0">
             <div className="text-xl font-semibold text-gray-800">
               Total:{" "}
