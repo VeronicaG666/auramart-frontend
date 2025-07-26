@@ -13,7 +13,7 @@ const CartProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { isLoggedIn } = useUser();
 
-  /** ✅ Sync Cart */
+  // ✅ Sync Cart
   useEffect(() => {
     const syncCart = async () => {
       setIsLoading(true);
@@ -40,7 +40,7 @@ const CartProvider = ({ children }) => {
     syncCart();
   }, [isLoggedIn]);
 
-  /** ✅ Calculate totals */
+  // ✅ Calculate totals
   useEffect(() => {
     const quantity =
       cartData?.items?.reduce((acc, cur) => acc + Number(cur.quantity || 0), 0) || 0;
@@ -50,19 +50,17 @@ const CartProvider = ({ children }) => {
     setCartTotal(quantity);
   }, [cartData]);
 
-  /** ✅ Add Item */
+  // ✅ Add Item
   const addItem = async (productSlug, quantity) => {
     if (isLoggedIn) {
       const res = await cartService.addToCart(productSlug, quantity);
       setCartData(res.data);
     } else {
       try {
-        // Fetch product by slug
         const { data: product } = await API.get(`/products/${productSlug}`);
-        // Store minimal data in local cart (no image required as per request)
         localCart.addItem(
           {
-            id: product.id, // Keep ID for reference
+            id: product.product_id, // ✅ use product_id
             name: product.name,
             price: product.price,
           },
@@ -75,7 +73,6 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  /** ✅ Delete Item */
   const deleteItem = async (productId) => {
     if (isLoggedIn) {
       const res = await cartService.removeFromCart(productId);
@@ -86,7 +83,6 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  /** ✅ Increment */
   const increment = async (productId) => {
     if (isLoggedIn) {
       const res = await cartService.increment(productId);
@@ -98,7 +94,6 @@ const CartProvider = ({ children }) => {
     }
   };
 
-  /** ✅ Decrement */
   const decrement = async (productId) => {
     if (isLoggedIn) {
       const res = await cartService.decrement(productId);
