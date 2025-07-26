@@ -57,7 +57,7 @@ const CartProvider = ({ children }) => {
       setCartData(res.data);
     } else {
       try {
-        const { data: product } = await API.get(`/products/${productSlug}`);
+        const { data: product } = await API.get(`/products/id/${productSlug}`);
         localCart.addItem(
           {
             id: product.product_id, // ✅ use product_id
