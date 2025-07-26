@@ -1,17 +1,19 @@
-import localCart from "helpers/localStorage";
 import { createContext, useContext, useEffect, useState } from "react";
+import localCart from "helpers/localStorage";
 import cartService from "services/cart.service";
 import { useUser } from "./UserContext";
+import API from "api/axios.config";
 
 const CartContext = createContext();
 
 const CartProvider = ({ children }) => {
-  const [cartData, setCartData] = useState();
+  const [cartData, setCartData] = useState({ items: [] });
   const [cartSubtotal, setCartSubtotal] = useState(0);
   const [cartTotal, setCartTotal] = useState(0);
-  const { isLoggedIn } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const { isLoggedIn } = useUser();
 
+  /** ✅ Sync Cart */
   useEffect(() => {
     const syncCart = async () => {
       setIsLoading(true);
@@ -19,19 +21,18 @@ const CartProvider = ({ children }) => {
         if (isLoggedIn) {
           const items = localCart.getItems();
           if (items?.length > 0) {
-            for (const { product_id, quantity } of items) {
-              await cartService.addToCart(product_id, quantity);
+            for (const { id, quantity } of items) {
+              await cartService.addToCart(id, quantity);
             }
             localCart.clearCart();
           }
           const res = await cartService.getCart();
           setCartData(res.data);
         } else {
-          const items = localCart.getItems() || [];
-          setCartData({ items });
+          setCartData({ items: localCart.getItems() || [] });
         }
       } catch (err) {
-        console.error("Error syncing/fetching cart:", err.response?.data || err);
+        console.error("Error syncing cart:", err.message);
       } finally {
         setIsLoading(false);
       }
@@ -39,21 +40,34 @@ const CartProvider = ({ children }) => {
     syncCart();
   }, [isLoggedIn]);
 
+  /** ✅ Calculate totals */
   useEffect(() => {
-    const quantity = cartData?.items?.reduce((acc, cur) => acc + Number(cur.quantity), 0) || 0;
-    const totalAmt = cartData?.items?.reduce((acc, cur) => acc + Number(cur.subtotal), 0) || 0;
+    const quantity =
+      cartData?.items?.reduce((acc, cur) => acc + Number(cur.quantity || 0), 0) || 0;
+    const totalAmt =
+      cartData?.items?.reduce((acc, cur) => acc + Number(cur.subtotal || 0), 0) || 0;
     setCartSubtotal(totalAmt);
     setCartTotal(quantity);
   }, [cartData]);
 
-  const addItem = async (productId, quantity) => {
+  /** ✅ Add Item */
+  const addItem = async (productSlug, quantity) => {
     if (isLoggedIn) {
-      const res = await cartService.addToCart(productId, quantity);
+      const res = await cartService.addToCart(productSlug, quantity);
       setCartData(res.data);
     } else {
       try {
-        const { data: product } = await axios.get(`${API.defaults.baseURL}/products/id/${productId}`);
-        localCart.addItem(product, quantity);
+        // Fetch product by slug
+        const { data: product } = await API.get(`/products/${productSlug}`);
+        // Store minimal data in local cart (no image required as per request)
+        localCart.addItem(
+          {
+            id: product.id, // Keep ID for reference
+            name: product.name,
+            price: product.price,
+          },
+          quantity
+        );
         setCartData({ items: localCart.getItems() });
       } catch (error) {
         console.error("Error fetching product for guest cart:", error);
@@ -61,49 +75,40 @@ const CartProvider = ({ children }) => {
     }
   };
 
-
-  const deleteItem = async (product_id) => {
+  /** ✅ Delete Item */
+  const deleteItem = async (productId) => {
     if (isLoggedIn) {
-      const res = await cartService.removeFromCart(product_id);
+      const res = await cartService.removeFromCart(productId);
       setCartData(res.data);
     } else {
-      localCart.removeItem(product_id);
+      localCart.removeItem(productId);
       setCartData({ items: localCart.getItems() });
     }
   };
 
-  const increment = async (product_id) => {
+  /** ✅ Increment */
+  const increment = async (productId) => {
     if (isLoggedIn) {
-      const res = await cartService.increment(product_id);
-      const updatedItems = cartData.items.map((item) =>
-        item.product_id === product_id
-          ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.price }
-          : item
-      );
-      setCartData({ ...cartData, items: updatedItems });
+      const res = await cartService.increment(productId);
+      setCartData(res.data);
       return res;
     } else {
-      localCart.incrementQuantity(product_id);
-      setCartData({ ...cartData, items: localCart.getItems() });
+      localCart.incrementQuantity(productId);
+      setCartData({ items: localCart.getItems() });
     }
   };
 
-  const decrement = async (product_id) => {
+  /** ✅ Decrement */
+  const decrement = async (productId) => {
     if (isLoggedIn) {
-      const res = await cartService.decrement(product_id);
-      const updatedItems = cartData.items.map((item) =>
-        item.product_id === product_id
-          ? { ...item, quantity: Math.max(item.quantity - 1, 1), subtotal: (item.quantity - 1) * item.price }
-          : item
-      );
-      setCartData({ ...cartData, items: updatedItems });
+      const res = await cartService.decrement(productId);
+      setCartData(res.data);
       return res;
     } else {
-      localCart.decrementQuantity(product_id);
-      setCartData({ ...cartData, items: localCart.getItems() });
+      localCart.decrementQuantity(productId);
+      setCartData({ items: localCart.getItems() });
     }
   };
-
 
   return (
     <CartContext.Provider
